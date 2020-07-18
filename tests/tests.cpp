@@ -2,6 +2,7 @@
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 #include "catch/catch.hpp"
 #include "chronos/Chronos.hpp"
+#include "chronos/Parser.hpp"
 #include "TestUtils.hpp"
 
 
@@ -161,6 +162,100 @@ SCENARIO ("Failed job is retried exact number of times", "[unit]")
             {
                 schedule->withdrawNextTask();
                 REQUIRE(schedule->isEmpty());
+            }
+        }
+    }
+}
+
+SCENARIO("Entry with retry parameters is parsed correctly")
+{
+    using parser_t = chronos::parser::parser;
+    using boost::spirit::ascii::space;
+    using chronos::parser::strct::TaskEntry;
+    parser_t parser;
+
+    TaskEntry output;
+
+    GIVEN("Entry with retry time and count")
+    {
+        const std::string entry {
+            "Run \"test:test\" every 3 hours retry after 5 seconds"
+            "3 times;" };
+
+        WHEN ("Entry is parsed")
+        {
+            std::string::const_iterator iter { entry.begin() };
+            std::string::const_iterator end { entry.end() };
+            const bool result {
+                phrase_parse(iter, end, parser, space, output) };
+
+            THEN ("Parsing is successful")
+            {
+                const bool success { result && iter == end };
+                REQUIRE(success);
+            }
+        }
+    }
+}
+
+SCENARIO("Entry with specified time is parsed correctly")
+{
+    using parser_t = chronos::parser::parser;
+    using boost::spirit::ascii::space;
+    using chronos::parser::strct::TaskEntry;
+    parser_t parser;
+
+    TaskEntry output;
+
+    GIVEN("Entry with 'at' part")
+    {
+        const std::string entry {
+                "Run \"./program -i --param\" every month at 2 12:30"
+                " retry after 5 seconds 3 times;" };
+
+        WHEN ("Entry is parsed")
+        {
+            std::string::const_iterator iter { entry.begin() };
+            std::string::const_iterator end { entry.end() };
+            const bool result {
+                    phrase_parse(iter, end, parser, space, output) };
+
+            THEN ("Parsing is successful")
+            {
+                const bool success { result && iter == end };
+                REQUIRE(success);
+            }
+        }
+    }
+}
+
+SCENARIO("Entry with specified hour and singular retry time unit"
+         " is parsed correctly")
+{
+    using parser_t = chronos::parser::parser;
+    using boost::spirit::ascii::space;
+    using chronos::parser::strct::TaskEntry;
+    parser_t parser;
+
+    TaskEntry output;
+
+    GIVEN("Entry with 'at' part")
+    {
+        const std::string entry {
+                "Run \"./program -i --param\" every day at 23:15"
+                " retry after a minute;" };
+
+        WHEN ("Entry is parsed")
+        {
+            std::string::const_iterator iter { entry.begin() };
+            std::string::const_iterator end { entry.end() };
+            const bool result {
+                    phrase_parse(iter, end, parser, space, output) };
+
+            THEN ("Parsing is successful")
+            {
+                const bool success { result && iter == end };
+                REQUIRE(success);
             }
         }
     }
