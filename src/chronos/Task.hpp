@@ -356,6 +356,7 @@ namespace chronos
         TaskBuilder& atMinute()
         {
             task.time = time::closest_future_time_point<ClockT>();
+            return *this;
         }
 
         TaskBuilder& retryTimes(int count)
