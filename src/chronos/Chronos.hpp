@@ -14,4 +14,5 @@ namespace chronos
     using queue_t = ThreadsafePriorityQueue<Task, task::compare::Later>;
     using schedule_t = Schedule<queue_t, clock_t>;
     using dispatcher_t = Dispatcher<schedule_t, SystemCall>;
+    using task_builder_t = TaskBuilder<clock_t>;
 }

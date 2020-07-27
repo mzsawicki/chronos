@@ -1,6 +1,7 @@
 #pragma once
+#include <stdexcept>
 #include <string>
-#include <variant>
+#include <utility>
 #include <boost/spirit/home/qi/string/symbols.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
 #include <boost/spirit/include/phoenix.hpp>
@@ -54,6 +55,27 @@ namespace chronos::parser::enums
         SATURDAY,
         SUNDAY
     };
+
+    constexpr int week_day_to_number(const WeekDay &day)
+    {
+        switch (day)
+        {
+            case WeekDay::MONDAY:
+                return 1;
+            case WeekDay::TUESDAY:
+                return 2;
+            case WeekDay::WEDNESDAY:
+                return 3;
+            case WeekDay::THURSDAY:
+                return 4;
+            case WeekDay::FRIDAY:
+                return 5;
+            case WeekDay::SATURDAY:
+                return 6;
+            case WeekDay::SUNDAY:
+                return 7;
+        }
+    }
 }
 
 namespace chronos::parser::strct
@@ -194,6 +216,7 @@ namespace chronos::parser
     namespace qi = boost::spirit::qi;
     namespace ascii = boost::spirit::ascii;
 
+    using namespace qi;
     using namespace enums;
     using namespace literals;
     using namespace strct;
@@ -204,14 +227,6 @@ namespace chronos::parser
     using space_t = ascii::space_type;
 
     using boost::spirit::ascii::no_case;
-    using qi::attr;
-    using qi::char_;
-    using qi::grammar;
-    using qi::lexeme;
-    using qi::lit;
-    using qi::omit;
-    using qi::rule;
-    using qi::uint_;
 
     struct parser : grammar<iterator_t, TaskEntry(), space_t>
     {
@@ -228,6 +243,9 @@ namespace chronos::parser
         rule<iterator_t, std::string(), space_t> command;
         frequency_rule frequency_plural;
         frequency_rule frequency_singular;
+        rule<iterator_t, int, space_t> minute;
+        rule<iterator_t, int, space_t> hour;
+        rule<iterator_t, int, space_t> month_day;
         at_part_rule at_day;
         at_part_rule at_hour;
         at_part_rule at_minute;
@@ -260,26 +278,32 @@ namespace chronos::parser
                     attr(1)
                     >> no_case[task_frequency_unit_singular_];
 
+            minute %= uint_ [_pass = (_1 > 0 && _1 < 60)];
+
+            hour %= uint_ [_pass = (_1 > 0 && _1 < 25)];
+
+            month_day %= uint_ [_pass = (_1 > 0 && _1 < 32)];
+
             at %=
                     no_case[lit(AT)]
                     >> (at_day | at_hour | at_minute);
 
             at_day %=
-                    (uint_ | no_case[week_day_])
-                    >> uint_
+                    (month_day | no_case[week_day_])
+                    >> hour
                     >> (omit[COLON] | omit[COMMA])
-                    >> uint_;
+                    >> minute;
 
             at_hour %=
                     attr(0)
-                    >> uint_
+                    >> hour
                     >> (omit[COLON] | omit[COMMA])
-                    >> uint_;
+                    >> minute;
 
             at_minute %=
                     attr(0)
                     >> attr(0)
-                    >> uint_;
+                    >> minute;
 
             at_placeholder %= attr(0) >> attr(0) >> attr(0);
 
@@ -316,5 +340,211 @@ namespace chronos::parser
                     >> (retry | retry_placeholder)
                     >> ENDL;
         }
+    };
+}
+
+namespace chronos::parser::conversions
+{
+    using namespace enums;
+
+    int minutes_to_seconds(int count)
+    {
+        constexpr int SECONDS_IN_MINUTE { 60 };
+        return count * SECONDS_IN_MINUTE;
+    }
+
+    int hours_to_seconds(int count)
+    {
+        constexpr int SECONDS_IN_HOUR { 60 * 60 };
+        return count * SECONDS_IN_HOUR;
+    }
+
+    int days_to_seconds(int count)
+    {
+        constexpr int SECONDS_IN_DAY { 24 * 60 * 60 };
+        return count * SECONDS_IN_DAY;
+    }
+
+    int to_seconds(const RetryTime &unit, int count)
+    {
+        int seconds;
+        switch (unit)
+        {
+            case RetryTime::SECONDS:
+                seconds = count;
+                break;
+            case RetryTime::MINUTES:
+                seconds = minutes_to_seconds(count);
+                break;
+            case RetryTime::HOURS:
+                seconds = hours_to_seconds(count);
+                break;
+            case RetryTime::DAYS:
+                seconds = days_to_seconds(count);
+                break;
+        }
+        return seconds;
+    }
+}
+
+namespace chronos::parser
+{
+    template <typename TaskBuilderT>
+    class Converter
+    {
+    public:
+        typename TaskBuilderT::task_t convert(const strct::TaskEntry &output)
+        {
+            task_builder
+                .createTask()
+                .withCommand(output.command);
+
+            convertExecutionInfo(output);
+            convertRetryInfo(output);
+
+            return task_builder.build();
+        }
+
+    private:
+        void convertExecutionInfo(const strct::TaskEntry &parser_output)
+        {
+            using namespace enums;
+            const auto frequency { parser_output.frequency_part };
+            const auto frequency_unit { frequency.frequency_unit };
+            switch (frequency_unit)
+            {
+                case TaskFrequency::MINUTES:
+                    setTimeForMinutesFrequency(parser_output);
+                    break;
+                case TaskFrequency::HOURS:
+                    setTimeForHoursFrequency(parser_output);
+                    break;
+                case TaskFrequency::DAYS:
+                    setTimeForDaysFrequency(parser_output);
+                    break;
+                case TaskFrequency::WEEKS:
+                    setTimeForWeeksFrequency(parser_output);
+                    break;
+                case TaskFrequency::MONTHS:
+                    setTimeForMonthsFrequency(parser_output);
+                    break;
+            }
+        }
+
+        void convertRetryInfo(const strct::TaskEntry &parser_output)
+        {
+            const auto retry_info { parser_output.retry_part };
+            const auto retries_count { retry_info.retries_count };
+            const auto retry_time_count { retry_info.retry_time_count };
+            const auto retry_time_unit { retry_info.retry_time_unit };
+            const auto retry_after_seconds {
+                conversions::to_seconds(retry_time_unit, retry_time_count) };
+
+            task_builder
+                .retryTimes(retries_count)
+                .retryAfter(retry_after_seconds);
+        }
+
+        void setTimeForMinutesFrequency(const strct::TaskEntry &parser_output)
+        {
+            const auto frequency { parser_output.frequency_part };
+            const auto frequency_count { frequency.frequency_time_count };
+            task_builder.everyMinutesCount(frequency_count);
+            task_builder.atMinute();
+        }
+
+        void setTimeForHoursFrequency(const strct::TaskEntry &parser_output)
+        {
+            const auto frequency { parser_output.frequency_part };
+            const auto at { parser_output.at_part };
+            const auto frequency_count { frequency.frequency_time_count };
+            task_builder.everyHoursCount(frequency_count);
+            task_builder.atMinute(at.minute);
+        }
+
+        void setTimeForDaysFrequency(const strct::TaskEntry &parser_output)
+        {
+            const auto frequency { parser_output.frequency_part };
+            const auto frequency_count { frequency.frequency_time_count };
+            const auto at { parser_output.at_part };
+            task_builder.everyDaysCount(frequency_count);
+            task_builder.atHour({ at.hour, at.minute });
+        }
+
+        void setTimeForWeeksFrequency(const strct::TaskEntry &parser_output)
+        {
+            const auto frequency { parser_output.frequency_part };
+            const auto frequency_count { frequency.frequency_time_count };
+            const auto at { parser_output.at_part };
+            const auto week_day { boost::get<WeekDay>(at.day) };
+            task_builder.everyWeeksCount(frequency_count);
+            task_builder.atWeekDay(
+                    { .day = week_day_to_number(week_day),
+                      .hour = at.hour, .minute = at.minute });
+        }
+
+        void setTimeForMonthsFrequency(const strct::TaskEntry &parser_output)
+        {
+            const auto frequency { parser_output.frequency_part };
+            const auto frequency_count { frequency.frequency_time_count };
+            const auto at { parser_output.at_part };
+            const auto month_day { boost::get<int>(at.day) };
+            task_builder.everyMonthsCount(frequency_count);
+            task_builder.atMonthDay(
+                    { .day = month_day,
+                      .hour = at.hour, .minute = at.minute });
+        }
+
+        TaskBuilderT task_builder;
+    };
+}
+
+namespace chronos::parser::error
+{
+    class SyntaxError : public std::exception
+    {
+    public:
+        explicit SyntaxError(std::string bad_entry)
+            : entry(std::move(bad_entry)) { }
+
+        const char* what() const noexcept override
+        {
+            return entry.c_str();
+        }
+
+    private:
+        std::string entry;
+    };
+}
+
+namespace chronos
+{
+    template <typename TaskBuilderT>
+    class Parser
+    {
+    public:
+        typename TaskBuilderT::task_t parseEntry(const std::string &entry)
+        {
+            const auto parsing_output { parseToStruct(entry) };
+            return converter.convert(parsing_output);
+        }
+
+    private:
+        parser::strct::TaskEntry parseToStruct(const std::string &entry)
+        {
+            using boost::spirit::ascii::space;
+
+            parser::strct::TaskEntry output;
+            std::string::const_iterator iter { entry.begin() };
+            std::string::const_iterator end { entry.end() };
+
+            if(!phrase_parse(iter, end, parser, space, output))
+                throw parser::error::SyntaxError(entry);
+
+            return output;
+        }
+
+        parser::parser parser;
+        parser::Converter<TaskBuilderT> converter;
     };
 }
