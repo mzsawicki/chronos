@@ -449,8 +449,9 @@ namespace chronos::parser
         {
             const auto frequency { parser_output.frequency_part };
             const auto frequency_count { frequency.frequency_time_count };
-            task_builder.everyMinutesCount(frequency_count);
-            task_builder.atMinute();
+            task_builder
+                .everyMinutesCount(frequency_count)
+                .atMinute();
         }
 
         void setTimeForHoursFrequency(const strct::TaskEntry &parser_output)
@@ -458,8 +459,9 @@ namespace chronos::parser
             const auto frequency { parser_output.frequency_part };
             const auto at { parser_output.at_part };
             const auto frequency_count { frequency.frequency_time_count };
-            task_builder.everyHoursCount(frequency_count);
-            task_builder.atMinute(at.minute);
+            task_builder
+                .everyHoursCount(frequency_count)
+                .atMinute(at.minute);
         }
 
         void setTimeForDaysFrequency(const strct::TaskEntry &parser_output)
@@ -467,8 +469,9 @@ namespace chronos::parser
             const auto frequency { parser_output.frequency_part };
             const auto frequency_count { frequency.frequency_time_count };
             const auto at { parser_output.at_part };
-            task_builder.everyDaysCount(frequency_count);
-            task_builder.atHour({ at.hour, at.minute });
+            task_builder
+                .everyDaysCount(frequency_count)
+                .atHour({ at.hour, at.minute });
         }
 
         void setTimeForWeeksFrequency(const strct::TaskEntry &parser_output)
@@ -477,8 +480,9 @@ namespace chronos::parser
             const auto frequency_count { frequency.frequency_time_count };
             const auto at { parser_output.at_part };
             const auto week_day { boost::get<WeekDay>(at.day) };
-            task_builder.everyWeeksCount(frequency_count);
-            task_builder.atWeekDay(
+            task_builder
+                .everyWeeksCount(frequency_count)
+                .atWeekDay(
                     { .day = week_day_to_number(week_day),
                       .hour = at.hour, .minute = at.minute });
         }
@@ -489,8 +493,9 @@ namespace chronos::parser
             const auto frequency_count { frequency.frequency_time_count };
             const auto at { parser_output.at_part };
             const auto month_day { boost::get<int>(at.day) };
-            task_builder.everyMonthsCount(frequency_count);
-            task_builder.atMonthDay(
+            task_builder
+                .everyMonthsCount(frequency_count)
+                .atMonthDay(
                     { .day = month_day,
                       .hour = at.hour, .minute = at.minute });
         }
