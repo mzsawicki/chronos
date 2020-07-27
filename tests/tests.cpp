@@ -167,7 +167,7 @@ SCENARIO ("Failed job is retried exact number of times", "[unit]")
     }
 }
 
-SCENARIO("Entry with retry parameters is parsed correctly")
+SCENARIO("Entry with retry parameters is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
@@ -198,7 +198,7 @@ SCENARIO("Entry with retry parameters is parsed correctly")
     }
 }
 
-SCENARIO("Entry with specified time is parsed correctly")
+SCENARIO("Entry with specified time is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
@@ -230,7 +230,7 @@ SCENARIO("Entry with specified time is parsed correctly")
 }
 
 SCENARIO("Entry with specified hour and singular retry time unit"
-         " is parsed correctly")
+         " is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
