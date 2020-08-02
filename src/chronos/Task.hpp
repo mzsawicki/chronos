@@ -11,6 +11,7 @@ namespace chronos
     using day_number_t = int;
     using weekday_number_t = int;
     using month_number_t = int;
+    using month_t = boost::gregorian::greg_month;
     using retry_count_t = int;
     using time_t = boost::posix_time::ptime;
     using date_t = boost::gregorian::date;
@@ -96,6 +97,11 @@ namespace chronos::time
         return minutes_count(lhs) < minutes_count(rhs);
     }
 
+    month_t increment(const month_t &month)
+    {
+        return month_t(month.as_number() % 12 + 1);
+    }
+
     MonthTime extract_month_time(const time_t &time_point)
     {
         const auto date { time_point.date() };
@@ -163,11 +169,11 @@ namespace chronos::time
         const auto current_month_time { extract_month_time(current_time) };
         const auto result_month {
             current_month_time < month_time
-            ? current_month : current_month + months_duration_t(1) };
+            ? current_month : increment(current_month) };
         const auto result_daytime {
-            time_duration_t(month_time.hour, month_time.minute, NO_SECONDS)};
+            time_duration_t(month_time.hour, month_time.minute, NO_SECONDS) };
         const auto result_date {
-            date_t(month_time.day, result_month, current_year) };
+            date_t(current_year, result_month, month_time.day) };
         return time_t(result_date, result_daytime);
     }
 
