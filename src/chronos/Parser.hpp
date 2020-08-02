@@ -1,7 +1,9 @@
 #pragma once
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 #include "boost/spirit/home/qi/string/symbols.hpp"
 #include "boost/fusion/include/adapt_struct.hpp"
 #include "boost/spirit/include/phoenix.hpp"
@@ -58,23 +60,32 @@ namespace chronos::parser::enums
 
     constexpr int week_day_to_number(const WeekDay &day)
     {
+        int day_number { 0 };
         switch (day)
         {
             case WeekDay::MONDAY:
-                return 1;
+                day_number = 1;
+                break;
             case WeekDay::TUESDAY:
-                return 2;
+                day_number = 2;
+                break;
             case WeekDay::WEDNESDAY:
-                return 3;
+                day_number = 3;
+                break;
             case WeekDay::THURSDAY:
-                return 4;
+                day_number = 4;
+                break;
             case WeekDay::FRIDAY:
-                return 5;
+                day_number = 5;
+                break;
             case WeekDay::SATURDAY:
-                return 6;
+                day_number = 6;
+                break;
             case WeekDay::SUNDAY:
-                return 7;
+                day_number = 7;
+                break;
         }
+        return day_number;
     }
 }
 
@@ -278,9 +289,9 @@ namespace chronos::parser
                     attr(1)
                     >> no_case[task_frequency_unit_singular_];
 
-            minute %= uint_ [_pass = (_1 > 0 && _1 < 60)];
+            minute %= uint_ [_pass = (_1 >= 0 && _1 < 60)];
 
-            hour %= uint_ [_pass = (_1 > 0 && _1 < 25)];
+            hour %= uint_ [_pass = (_1 >= 0 && _1 < 25)];
 
             month_day %= uint_ [_pass = (_1 > 0 && _1 < 32)];
 
@@ -522,29 +533,45 @@ namespace chronos::parser::error
     };
 }
 
+namespace chronos::parser
+{
+    void throw_parsing_error(const std::string::const_iterator &iter)
+    {
+        std::string bad_part { *iter };
+        throw error::SyntaxError("Syntax error at: " + bad_part);
+    }
+}
+
 namespace chronos
 {
     template <typename TaskBuilderT>
     class Parser
     {
     public:
-        typename TaskBuilderT::task_t parseEntry(const std::string &entry)
+        using parsing_output_t = std::vector<parser::strct::TaskEntry>;
+        using result_t = std::vector<typename TaskBuilderT::task_t>;
+
+        result_t parse(const std::string &input)
         {
-            const auto parsing_output { parseToStruct(entry) };
-            return converter.convert(parsing_output);
+            const auto parsing_output { parseToStruct(input) };
+            result_t result;
+            for (const auto &output : parsing_output)
+                result.push_back(converter.convert(output));
+            return result;
         }
 
     private:
-        parser::strct::TaskEntry parseToStruct(const std::string &entry)
+        parsing_output_t parseToStruct(const std::string &input)
         {
             using boost::spirit::ascii::space;
 
-            parser::strct::TaskEntry output;
-            std::string::const_iterator iter { entry.begin() };
-            std::string::const_iterator end { entry.end() };
+            std::vector<parser::strct::TaskEntry> output;
+            std::string::const_iterator iter(input.begin());
+            std::string::const_iterator end(input.end());
 
-            if(!phrase_parse(iter, end, parser, space, output))
-                throw parser::error::SyntaxError(entry);
+            while (iter != end)
+                if(!phrase_parse(iter, end, parser, space, output))
+                    parser::throw_parsing_error(iter);
 
             return output;
         }
