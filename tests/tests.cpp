@@ -179,7 +179,7 @@ SCENARIO("Entry with retry parameters is parsed correctly", "[unit]")
     GIVEN("Entry with retry time and count")
     {
         const std::string entry {
-            "Run \"test:test\" every 3 hours retry after 5 seconds"
+            "Run \"test:test\" every 3 hours retry after 5 seconds "
             "3 times;" };
 
         WHEN ("Entry is parsed")
@@ -244,6 +244,36 @@ SCENARIO("Entry with specified hour and singular retry time unit"
         const std::string entry {
                 "Run \"./program -i --param\" every day at 23:15"
                 " retry after a minute;" };
+
+        WHEN ("Entry is parsed")
+        {
+            std::string::const_iterator iter { entry.begin() };
+            std::string::const_iterator end { entry.end() };
+            const bool result {
+                    phrase_parse(iter, end, parser, space, output) };
+
+            THEN ("Parsing is successful")
+            {
+                const bool success { result && iter == end };
+                REQUIRE(success);
+            }
+        }
+    }
+}
+
+SCENARIO("Entry is parsed correctly when minute part is 00", "[unit]")
+{
+    using parser_t = chronos::parser::parser;
+    using boost::spirit::ascii::space;
+    using chronos::parser::strct::TaskEntry;
+    parser_t parser;
+
+    TaskEntry output;
+
+    GIVEN("The entry")
+    {
+        const std::string entry {
+            "Run \"./program -i --param\" every day at 12:00;"};
 
         WHEN ("Entry is parsed")
         {
