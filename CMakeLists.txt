@@ -24,4 +24,5 @@ include_directories(src)
 # Executables
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     add_executable(tests tests/tests.cpp)
+    add_executable(file_parsing tests/file_parsing.cpp)
 endif()

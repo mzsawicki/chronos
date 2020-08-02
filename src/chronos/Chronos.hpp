@@ -1,6 +1,7 @@
 #pragma once
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "chronos/Dispatcher.hpp"
+#include "chronos/Parser.hpp"
 #include "chronos/Queue.hpp"
 #include "chronos/Schedule.hpp"
 #include "chronos/System.hpp"
@@ -15,4 +16,5 @@ namespace chronos
     using schedule_t = Schedule<queue_t, clock_t>;
     using dispatcher_t = Dispatcher<schedule_t, SystemCall>;
     using task_builder_t = TaskBuilder<clock_t>;
+    using parser_t = Parser<task_builder_t>;
 }
