@@ -1,10 +1,56 @@
 #pragma once
 #include "boost/date_time/posix_time/posix_time.hpp"
 #include "fmt/core.h"
-#include "spdlog/spdlog.h"
+#include "spdlog/pattern_formatter.h"
 #include "spdlog/sinks/daily_file_sink.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
+#include "spdlog/spdlog.h"
 
+
+namespace chronos::logging::formatters::detail
+{
+    template <typename ClockT>
+    std::string get_time_string()
+    {
+        using namespace boost::posix_time;
+        const auto clock_time { ClockT::local_time() };
+        const auto time_string { to_simple_string(clock_time) };
+        return time_string;
+    }
+
+    template <typename ClockT>
+    class CustomTimeFormatterFlag : public spdlog::custom_flag_formatter
+    {
+    public:
+        void format(const spdlog::details::log_msg &msg, const tm &tm_time,
+                    spdlog::memory_buf_t &dest) override
+        {
+            const auto time_string { get_time_string<ClockT>() };
+            dest.append(time_string.data(),
+                        time_string.data() + time_string.size());
+        }
+
+        [[nodiscard]]
+        std::unique_ptr<custom_flag_formatter> clone() const override
+        {
+            return spdlog::details::make_unique<
+                    CustomTimeFormatterFlag<ClockT> >();
+        }
+    };
+}
+
+namespace chronos::logging::formatters
+{
+    template <typename ClockT>
+    std::unique_ptr<spdlog::pattern_formatter> get_custom_time_formatter()
+    {
+        auto formatter { std::make_unique<spdlog::pattern_formatter>() };
+        formatter
+            ->add_flag<detail::CustomTimeFormatterFlag<ClockT> >('#')
+            .set_pattern("[%#] (%l): %v");
+        return formatter;
+    }
+}
 
 namespace chronos
 {
@@ -17,10 +63,13 @@ namespace chronos
         spdlog::set_default_logger(logger);
     }
 
+    template <typename ClockT>
     void setup_console_logger()
     {
+        using namespace logging::formatters;
         auto logger = spdlog::stdout_color_mt("console");
-        logger->set_pattern("[%c] (%l): %v");
+        auto formatter { get_custom_time_formatter<ClockT>() };
+        logger->set_formatter(std::move(formatter));
         spdlog::set_default_logger(logger);
     }
 }
