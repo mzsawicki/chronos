@@ -67,7 +67,7 @@ namespace chronos
     void setup_console_logger()
     {
         using namespace logging::formatters;
-        auto logger = spdlog::stdout_color_mt("console");
+        auto logger { spdlog::stdout_color_mt("console") };
         auto formatter { get_custom_time_formatter<ClockT>() };
         logger->set_formatter(std::move(formatter));
         spdlog::set_default_logger(logger);
@@ -94,9 +94,9 @@ namespace chronos::logging::schedule
     {
         using namespace boost::posix_time;
         const auto task_time_string { to_simple_string(task.time) };
-        const std::string message = fmt::format(
+        const std::string message { fmt::format(
                     "Added new task to schedule: \"{}\" to be executed at: {}",
-                    task.command, task_time_string);
+                    task.command, task_time_string) };
         log(message);
     }
 
@@ -105,17 +105,17 @@ namespace chronos::logging::schedule
     {
         using namespace boost::posix_time;
         const auto task_time_string { to_simple_string(task.time) };
-        const std::string message = fmt::format(
+        const std::string message { fmt::format(
                 "Rescheduled task: \"{}\" to be executed at: {}",
-                task.command, task_time_string);
+                task.command, task_time_string) };
         log(message);
     }
 
     template <typename TaskT>
     void log_before_retry(const TaskT &task)
     {
-        const std::string message = fmt::format(
-                "Task will be retried: \"{}\"", task.command);
+        const std::string message { fmt::format(
+                "Task will be retried: \"{}\"", task.command) };
         log(message);
     }
 }
@@ -124,8 +124,8 @@ namespace chronos::logging::system
 {
     void log_before_command_execution(const std::string &command)
     {
-        const std::string message = fmt::format(
-                "Executing command: \"{}\"", command);
+        const std::string message { fmt::format(
+                "Executing command: \"{}\"", command) };
         log(message);
     }
 
