@@ -113,7 +113,7 @@ namespace chronos
             logging::schedule::log_added_task(task);
         }
 
-        void reschedule(const typename WrapeeT::task_t &task)
+        void reschedule(typename WrapeeT::task_t &task)
         {
             wrapee.reschedule(task);
             logging::schedule::log_rescheduled_task(task);
