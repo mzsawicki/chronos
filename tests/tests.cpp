@@ -1,6 +1,6 @@
 #define CATCH_CONFIG_MAIN
 #include "boost/date_time/posix_time/posix_time_types.hpp"
-#include "catch/catch.hpp"
+#include "catch2/catch.hpp"
 #include "chronos/Chronos.hpp"
 #include "chronos/Parser.hpp"
 #include "TestUtils.hpp"

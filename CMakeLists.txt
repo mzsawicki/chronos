@@ -18,8 +18,8 @@ endif()
 
 find_package(Boost 1.73 REQUIRED)
 
-include_directories(include)
 include_directories(src)
+include_directories(${CONAN_INCLUDE_DIRS})
 
 # Executables
 if (CMAKE_BUILD_TYPE MATCHES Debug)
