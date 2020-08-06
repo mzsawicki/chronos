@@ -1,4 +1,5 @@
 #pragma once
+#include <random>
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 
 
@@ -28,6 +29,20 @@ namespace test
         {
             return false;
         }
+    };
+
+    class FakeSystemCall
+    {
+    public:
+        bool operator() (const std::string&)
+        {
+            return distribution(generator);
+        }
+
+    private:
+        std::default_random_engine generator;
+        std::uniform_int_distribution<int> distribution {
+            std::uniform_int_distribution(0, 1) };
     };
 
     template <typename ScheduleT>

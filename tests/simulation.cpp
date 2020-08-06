@@ -21,7 +21,7 @@ using queue_t = chronos::ThreadsafePriorityQueue<task_t,
 using schedule_t = chronos::ScheduleLoggingProxy<
         chronos::Schedule<queue_t, test_clock_t> >;
 using execution_t = chronos::SystemCallLoggingProxy<
-        test::FailingExecution>;
+        test::FakeSystemCall>;
 using dispatcher_t = chronos::Dispatcher<schedule_t, execution_t>;
 using file_reader_t = chronos::FileReader<parser_t, schedule_t>;
 
@@ -38,7 +38,7 @@ void loop(dispatcher_t &dispatcher)
     const auto time_to_next_task { dispatcher.timeToNextTask() };
     test_clock_t::wait(time_to_next_task);
     dispatcher.handleNextTask();
-    getchar();
+    std::cin.get();
 }
 
 int main()
