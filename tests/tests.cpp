@@ -1,5 +1,5 @@
 #define CATCH_CONFIG_MAIN
-#include "boost/date_time/posix_time/posix_time_types.hpp"
+#include "boost/date_time/posix_time/posix_time.hpp"
 #include "catch2/catch.hpp"
 #include "chronos/Dispatcher.hpp"
 #include "chronos/Parser.hpp"
@@ -16,9 +16,6 @@ namespace chronos
     using queue_t = chronos::ThreadsafePriorityQueue<chronos::Task,
             chronos::task::compare::Later>;
     using schedule_t = chronos::Schedule<queue_t, second_clock_t>;
-    using dispatcher_t = chronos::Dispatcher<schedule_t, chronos::SystemCall>;
-    using task_builder_t = chronos::TaskBuilder<clock_t>;
-    using parser_t = chronos::Parser<task_builder_t>;
 }
 
 namespace test
@@ -156,7 +153,7 @@ SCENARIO ("Failed job is retried exact number of times", "[unit]")
     auto schedule = chronos::createSchedule<chronos::schedule_t>();
     failing_dispatcher_t dispatcher(schedule);
 
-    GIVEN("Task with 3 max retries")
+    GIVEN ("Task with 3 max retries")
     {
         using namespace boost::gregorian;
         using namespace boost::posix_time;
@@ -182,7 +179,7 @@ SCENARIO ("Failed job is retried exact number of times", "[unit]")
     }
 }
 
-SCENARIO("Entry with retry parameters is parsed correctly", "[unit]")
+SCENARIO ("Entry with retry parameters is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
@@ -191,7 +188,7 @@ SCENARIO("Entry with retry parameters is parsed correctly", "[unit]")
 
     TaskEntry output;
 
-    GIVEN("Entry with retry time and count")
+    GIVEN ("Entry with retry time and count")
     {
         const std::string entry {
             "Run \"test:test\" every 3 hours retry after 5 seconds "
@@ -213,7 +210,7 @@ SCENARIO("Entry with retry parameters is parsed correctly", "[unit]")
     }
 }
 
-SCENARIO("Entry with specified time is parsed correctly", "[unit]")
+SCENARIO ("Entry with specified time is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
@@ -222,7 +219,7 @@ SCENARIO("Entry with specified time is parsed correctly", "[unit]")
 
     TaskEntry output;
 
-    GIVEN("Entry with 'at' part")
+    GIVEN ("Entry with 'at' part")
     {
         const std::string entry {
                 "Run \"./program -i --param\" every month at 2 12:30"
@@ -244,7 +241,7 @@ SCENARIO("Entry with specified time is parsed correctly", "[unit]")
     }
 }
 
-SCENARIO("Entry with specified hour and singular retry time unit"
+SCENARIO ("Entry with specified hour and singular retry time unit"
          " is parsed correctly", "[unit]")
 {
     using parser_t = chronos::parser::parser;
@@ -276,7 +273,7 @@ SCENARIO("Entry with specified hour and singular retry time unit"
     }
 }
 
-SCENARIO("Entry is parsed correctly when minute part is 00", "[unit]")
+SCENARIO ("Entry is parsed correctly when minute part is 00", "[unit]")
 {
     using parser_t = chronos::parser::parser;
     using boost::spirit::ascii::space;
@@ -301,6 +298,37 @@ SCENARIO("Entry is parsed correctly when minute part is 00", "[unit]")
             {
                 const bool success { result && iter == end };
                 REQUIRE(success);
+            }
+        }
+    }
+}
+
+SCENARIO ("Closest time point for given week time is correct", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("A thursday (7 August 2020)")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 8, 7));
+
+        WHEN ("A task is created to be executed every monday")
+        {
+            const auto task {
+                task_builder
+                .everyWeeksCount(1)
+                .atWeekDay({ .day = 1, .hour = 0, .minute = 0 })
+                .build() };
+
+            THEN ("Resulting task execution time is next monday")
+            {
+                const auto correct_execution_time { ptime_t(
+                        date_t(2020, 8, 10)) };
+                const auto result_execution_time { task.time };
+                REQUIRE(result_execution_time == correct_execution_time);
             }
         }
     }

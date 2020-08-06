@@ -184,7 +184,7 @@ namespace chronos::time
         const auto current_date { current_time.date() };
         const auto current_week_time { extract_week_time(current_time) };
         const auto days_remaining {
-            abs(current_week_time.day - week_time.day) % DAYS_IN_WEEK };
+            abs(current_week_time.day - week_time.day - 1) % DAYS_IN_WEEK };
         const auto result_daytime {
             time_duration_t(week_time.hour, week_time.minute, NO_SECONDS) };
         const auto result_date {
