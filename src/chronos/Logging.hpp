@@ -80,11 +80,6 @@ namespace chronos::logging
     {
         spdlog::info(message);
     }
-
-    void log_error(const std::string &message)
-    {
-        spdlog::error(message);
-    }
 }
 
 namespace chronos::logging::schedule
@@ -138,7 +133,7 @@ namespace chronos::logging::system
     void log_after_failed_execution(const std::string &command)
     {
         const std::string message { "Execution failed" };
-        log_error(message);
+        log(message);
     }
 }
 
