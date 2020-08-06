@@ -10,7 +10,10 @@ namespace test
         using timepoint_t = boost::posix_time::ptime;
         using duration_t = boost::posix_time::time_duration;
 
-        inline static timepoint_t time;
+        inline static timepoint_t time {
+            boost::posix_time::ptime(
+                    boost::gregorian::date(1960, 1, 1))
+        };
 
         static timepoint_t local_time()
         {
