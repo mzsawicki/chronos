@@ -53,6 +53,7 @@ int main()
     const auto schedule { reader.read(file) };
     dispatcher_t dispatcher(schedule);
 
+    std::cin.get();
     while(!schedule->isEmpty())
         loop(dispatcher);
 

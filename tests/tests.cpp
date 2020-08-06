@@ -1,10 +1,25 @@
 #define CATCH_CONFIG_MAIN
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 #include "catch2/catch.hpp"
-#include "chronos/Chronos.hpp"
+#include "chronos/Dispatcher.hpp"
 #include "chronos/Parser.hpp"
+#include "chronos/Queue.hpp"
+#include "chronos/Schedule.hpp"
+#include "chronos/System.hpp"
+#include "chronos/Task.hpp"
 #include "TestUtils.hpp"
 
+
+namespace chronos
+{
+    using second_clock_t = boost::posix_time::second_clock;
+    using queue_t = chronos::ThreadsafePriorityQueue<chronos::Task,
+            chronos::task::compare::Later>;
+    using schedule_t = chronos::Schedule<queue_t, second_clock_t>;
+    using dispatcher_t = chronos::Dispatcher<schedule_t, chronos::SystemCall>;
+    using task_builder_t = chronos::TaskBuilder<clock_t>;
+    using parser_t = chronos::Parser<task_builder_t>;
+}
 
 namespace test
 {

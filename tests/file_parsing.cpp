@@ -1,6 +1,18 @@
 #include <iostream>
-#include "chronos/Chronos.hpp"
+#include <filesystem>
+#include "boost/date_time/posix_time/posix_time.hpp"
+#include "chronos/Parser.hpp"
+#include "chronos/Queue.hpp"
+#include "chronos/Schedule.hpp"
+#include "chronos/Task.hpp"
 
+
+using second_clock_t = boost::posix_time::second_clock;
+using queue_t = chronos::ThreadsafePriorityQueue<chronos::Task,
+    chronos::task::compare::Later>;
+using schedule_t = chronos::Schedule<queue_t, clock_t>;
+using task_builder_t = chronos::TaskBuilder<clock_t>;
+using parser_t = chronos::Parser<task_builder_t>;
 
 void print_interval(const chronos::time_duration_t &interval)
 {
@@ -47,7 +59,7 @@ int main()
     std::ostringstream string_stream;
     string_stream << file.rdbuf();
     std::string content { string_stream.str() };
-    chronos::parser_t parser;
+    parser_t parser;
     try {
         const auto tasks { parser.parse(content) };
         for (const auto &task : tasks)
