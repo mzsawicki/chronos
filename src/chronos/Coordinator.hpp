@@ -5,7 +5,7 @@
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 
 
-namespace chronos
+namespace chronos::coordinator
 {
     class Timer
     {
@@ -19,13 +19,36 @@ namespace chronos
             std::unique_lock<std::mutex> lock(mutex);
             interrupted.wait_for(lock, seconds_t(duration.seconds()));
         }
-        
+
         void interrupt()
         {
             interrupted.notify_one();
         }
-        
+
     private:
         std::condition_variable interrupted;
+    };
+}
+
+namespace chronos
+{
+    template <typename DispatcherT>
+    class Coordinator
+    {
+    public:
+        void loop()
+        {
+            timer.wait(dispatcher.timeToNextTask());
+            dispatcher.handleNextTask();
+        }
+
+        void terminate()
+        {
+            timer.interrupt();
+        }
+
+    private:
+        DispatcherT dispatcher;
+        coordinator::Timer timer;
     };
 }

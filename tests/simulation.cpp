@@ -30,6 +30,7 @@ namespace simulation
 
 std::filesystem::path get_file_path_from_user()
 {
+    std::cout << "File path:\n> ";
     std::string input_path;
     std::cin >> input_path;
     std::filesystem::path path(input_path);
@@ -50,7 +51,6 @@ int main()
     simulation::test_clock_t::time =
             boost::posix_time::second_clock::local_time();
 
-    std::cout << "File path:\n> ";
     const auto file { get_file_path_from_user() };
 
     simulation::file_reader_t reader;
