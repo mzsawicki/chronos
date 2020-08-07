@@ -517,19 +517,11 @@ namespace chronos::parser
 
 namespace chronos::parser::error
 {
-    class SyntaxError : public std::exception
+    class SyntaxError : public std::runtime_error
     {
     public:
         explicit SyntaxError(std::string bad_entry)
-            : entry(std::move(bad_entry)) { }
-
-        const char* what() const noexcept override
-        {
-            return entry.c_str();
-        }
-
-    private:
-        std::string entry;
+            : std::runtime_error(std::move(bad_entry)) { }
     };
 }
 
