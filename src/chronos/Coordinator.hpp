@@ -36,6 +36,9 @@ namespace chronos
     class Coordinator
     {
     public:
+        explicit Coordinator(DispatcherT dispatcher)
+            : dispatcher(std::move(dispatcher)) { }
+
         void loop()
         {
             timer.wait(dispatcher.timeToNextTask());
