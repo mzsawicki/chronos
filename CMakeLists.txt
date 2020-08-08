@@ -18,6 +18,9 @@ endif()
 
 find_package(Boost 1.73 REQUIRED)
 
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 include_directories(src)
 include_directories(${CONAN_INCLUDE_DIRS})
 
@@ -26,3 +29,6 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
     add_executable(tests tests/tests.cpp)
     add_executable(simulation tests/simulation.cpp)
 endif()
+
+add_executable(chronos src/Chronos.cpp)
+target_link_libraries(chronos PRIVATE Threads::Threads)

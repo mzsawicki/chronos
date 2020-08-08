@@ -17,7 +17,8 @@ namespace chronos::coordinator
         {
             std::mutex mutex;
             std::unique_lock<std::mutex> lock(mutex);
-            interrupted.wait_for(lock, seconds_t(duration.seconds()));
+            const auto seconds_wait { duration.total_seconds() };
+            interrupted.wait_for(lock, seconds_t(seconds_wait));
         }
 
         void interrupt()
@@ -41,7 +42,8 @@ namespace chronos
 
         void loop()
         {
-            timer.wait(dispatcher.timeToNextTask());
+            const auto time_to_next_task { dispatcher.timeToNextTask() };
+            timer.wait(time_to_next_task);
             dispatcher.handleNextTask();
         }
 
