@@ -3,7 +3,6 @@
 #include "catch2/catch.hpp"
 #include "chronos/Dispatcher.hpp"
 #include "chronos/Parser.hpp"
-#include "chronos/Queue.hpp"
 #include "chronos/Schedule.hpp"
 #include "chronos/System.hpp"
 #include "chronos/Task.hpp"
@@ -13,9 +12,7 @@
 namespace chronos
 {
     using second_clock_t = boost::posix_time::second_clock;
-    using queue_t = chronos::ThreadsafePriorityQueue<chronos::Task,
-            chronos::task::compare::Later>;
-    using schedule_t = chronos::Schedule<queue_t, second_clock_t>;
+    using schedule_t = chronos::Schedule<chronos::Task, second_clock_t>;
 }
 
 namespace test
@@ -150,7 +147,7 @@ SCENARIO ("Failed job is retried exact number of times", "[unit]")
 {
     using failing_dispatcher_t = chronos::Dispatcher<chronos::schedule_t,
         test::FailingExecution>;
-    auto schedule = chronos::createSchedule<chronos::schedule_t>();
+    auto schedule { std::make_shared<chronos::schedule_t>() };
     failing_dispatcher_t dispatcher(schedule);
 
     GIVEN ("Task with 3 max retries")

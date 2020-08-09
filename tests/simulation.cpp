@@ -6,7 +6,6 @@
 #include "chronos/FileReader.hpp"
 #include "chronos/Logging.hpp"
 #include "chronos/Parser.hpp"
-#include "chronos/Queue.hpp"
 #include "chronos/Schedule.hpp"
 #include "chronos/Task.hpp"
 #include "TestUtils.hpp"
@@ -18,12 +17,9 @@ namespace simulation
     using test_clock_t = test::Clock;
     using task_builder_t = chronos::TaskBuilder<test_clock_t>;
     using parser_t = chronos::Parser<task_builder_t>;
-    using queue_t = chronos::ThreadsafePriorityQueue<task_t,
-            chronos::task::compare::Later>;
     using schedule_t = chronos::ScheduleLoggingProxy<
-            chronos::Schedule<queue_t, test_clock_t> >;
-    using execution_t = chronos::SystemCallLoggingProxy<
-            test::FakeSystemCall>;
+            chronos::Schedule<task_t, test_clock_t> >;
+    using execution_t = chronos::SystemCallLoggingProxy<test::FakeSystemCall>;
     using dispatcher_t = chronos::Dispatcher<schedule_t, execution_t>;
     using file_reader_t = chronos::FileReader<parser_t, schedule_t>;
 }

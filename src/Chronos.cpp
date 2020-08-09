@@ -4,7 +4,6 @@
 #include "chronos/IO.hpp"
 #include "chronos/Logging.hpp"
 #include "chronos/Parser.hpp"
-#include "chronos/Queue.hpp"
 #include "chronos/Schedule.hpp"
 #include "chronos/System.hpp"
 #include "chronos/Task.hpp"
@@ -14,11 +13,7 @@ namespace chronos
 {
     using path_t = std::filesystem::path;
     using second_clock_t = boost::posix_time::second_clock;
-    using task_t = Task;
-    using task_comparator_t = task::compare::Later;
-    using queue_t = ThreadsafePriorityQueue<task_t, task_comparator_t>;
-    using schedule_t = ScheduleLoggingProxy<
-            Schedule<queue_t, second_clock_t> >;
+    using schedule_t = ScheduleLoggingProxy<Schedule<Task, second_clock_t> >;
     using schedule_ptr_t = std::shared_ptr<schedule_t>;
     using system_call_t = SystemCallLoggingProxy<SystemCall>;
     using dispatcher_t = Dispatcher<schedule_t, system_call_t>;

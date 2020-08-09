@@ -244,6 +244,11 @@ namespace chronos
         time_duration_t retry_after;
     };
 
+    bool operator < (const Task &lhs, const Task &rhs)
+    {
+        return lhs.time > rhs.time;
+    }
+
     bool is_retry(const Task &task)
     {
         return task.attempts_count > 0;
@@ -270,17 +275,6 @@ namespace chronos
         retry_task.attempts_count += 1;
         return retry_task;
     }
-}
-
-namespace chronos::task::compare
-{
-    struct Later
-    {
-        bool operator() (const Task &lhs, const Task &rhs)
-        {
-            return lhs.time > rhs.time;
-        }
-    };
 }
 
 namespace chronos
