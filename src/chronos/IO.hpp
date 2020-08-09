@@ -33,7 +33,7 @@ namespace chronos
     {
         io::validate_arguments_count(argc);
         constexpr auto SOURCE_FILE_ARG { 1 };
-        const auto source_path { argv[SOURCE_FILE_ARG };
+        const auto source_path { argv[SOURCE_FILE_ARG] };
         return std::filesystem::path(source_path);
     }
 
