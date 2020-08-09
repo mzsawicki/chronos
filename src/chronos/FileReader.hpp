@@ -53,7 +53,7 @@ namespace chronos
     private:
         std::shared_ptr<ScheduleT> parseContent(const std::string &content)
         {
-            const auto schedule { std::make_shared<ScheduleT>() };
+            auto schedule { std::make_shared<ScheduleT>() };
             for (const auto &task : parser.parse(content))
                 schedule->add(task);
             return schedule;
