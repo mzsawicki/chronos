@@ -60,6 +60,7 @@ namespace chronos
                                               "log/log.txt",
                                               0, 0);
         logger->set_pattern("[%c] (%l): %v");
+        spdlog::flush_on(spdlog::level::info);
         spdlog::set_default_logger(logger);
     }
 
