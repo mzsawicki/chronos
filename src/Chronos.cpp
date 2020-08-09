@@ -33,12 +33,12 @@ namespace chronos
 
     void show_arg_count_error(const io::error::WrongNumberOfArguments &error)
     {
-        chronos::show_error_message(error.what());
+        chronos::print_error_message(error.what());
     }
 
     void show_syntax_error(const parser::error::SyntaxError &error)
     {
-        chronos::show_error_message(fmt::format(
+        chronos::print_error_message(fmt::format(
                 "Syntax error: {}", error.what()));
     }
 
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     chronos::path_t chronos_file_path;
     try {
-        chronos_file_path = chronos::read_file_path(argc, argv);
+        chronos_file_path = chronos::read_file_path_from_arg(argc, argv);
     }
     catch (const chronos::io::error::WrongNumberOfArguments &error) {
         chronos::show_arg_count_error(error);

@@ -42,9 +42,7 @@ namespace chronos
     class FileReader
     {
     public:
-        using schedule_ptr_t = std::shared_ptr<ScheduleT>;
-
-        schedule_ptr_t read(const std::filesystem::path &path)
+        std::shared_ptr<ScheduleT> read(const std::filesystem::path &path)
         {
             filesystem::check_if_file_exist(path);
             const auto content { filesystem::read_file_content(path) };
@@ -53,7 +51,7 @@ namespace chronos
         }
 
     private:
-        schedule_ptr_t parseContent(const std::string &content)
+        std::shared_ptr<ScheduleT> parseContent(const std::string &content)
         {
             const auto schedule { std::make_shared<ScheduleT>() };
             for (const auto &task : parser.parse(content))
