@@ -307,10 +307,42 @@ SCENARIO ("Closest time point for given week time is correct", "[unit]")
     using date_t = boost::gregorian::date;
     task_builder_t task_builder;
 
-    GIVEN ("A thursday (7 August 2020)")
+    GIVEN ("A friday (7 August 2020)")
     {
         test::artificial_clock_t::time = ptime_t(
                 date_t(2020, 8, 7));
+
+        WHEN ("A task is created to be executed every monday")
+        {
+            const auto task {
+                task_builder
+                .everyWeeksCount(1)
+                .atWeekDay({ .day = 1, .hour = 0, .minute = 0 })
+                .build() };
+
+            THEN ("Resulting task execution time is next monday")
+            {
+                const auto correct_execution_time { ptime_t(
+                        date_t(2020, 8, 10)) };
+                const auto result_execution_time { task.time };
+                REQUIRE(result_execution_time == correct_execution_time);
+            }
+        }
+    }
+}
+
+SCENARIO ("Closest time point is correct for week-related point "
+          "calculated on sunday", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("A sunday (9 August 2020)")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 8, 9));
 
         WHEN ("A task is created to be executed every monday")
         {

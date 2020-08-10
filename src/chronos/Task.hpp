@@ -8,9 +8,6 @@
 namespace chronos
 {
     using command_t = std::string;
-    using day_number_t = int;
-    using weekday_number_t = int;
-    using month_number_t = int;
     using month_t = boost::gregorian::greg_month;
     using retry_count_t = int;
     using time_t = boost::posix_time::ptime;
@@ -180,11 +177,13 @@ namespace chronos::time
     template <typename ClockT>
     time_t closest_future_time_point(const WeekTime &week_time)
     {
+        using constants::DAYS_IN_WEEK;
         const auto current_time { ClockT::local_time() };
         const auto current_date { current_time.date() };
         const auto current_week_time { extract_week_time(current_time) };
         const auto days_remaining {
-            abs(current_week_time.day - week_time.day - 1) % DAYS_IN_WEEK };
+            (DAYS_IN_WEEK - current_week_time.day + week_time.day)
+            % DAYS_IN_WEEK };
         const auto result_daytime {
             time_duration_t(week_time.hour, week_time.minute, NO_SECONDS) };
         const auto result_date {
