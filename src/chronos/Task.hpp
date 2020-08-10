@@ -104,7 +104,7 @@ namespace chronos::time
         const auto date { time_point.date() };
         const auto time_of_day { time_point.time_of_day() };
         MonthTime month_time;
-        month_time.day = date.day_number();
+        month_time.day = date.day();
         month_time.hour = time_of_day.hours();
         month_time.minute = time_of_day.minutes();
         return month_time;

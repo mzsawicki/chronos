@@ -362,3 +362,39 @@ SCENARIO ("Closest time point is correct for week-related point "
         }
     }
 }
+
+SCENARIO ("Closest time point is correct for month-related point", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    using hours_t = boost::posix_time::hours;
+    using minutes_t = boost::posix_time::minutes;
+    task_builder_t task_builder;
+
+    GIVEN ("A day in middle of month (17 August 2020) ")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 8, 17));
+
+        WHEN ("A task is created to be executed "
+              "every three months at day 16, 22:22")
+        {
+            const auto task {
+                task_builder
+                .everyMonthsCount(3)
+                .atMonthDay({ .day = 16, .hour = 22, .minute = 22 })
+                .build() };
+
+            THEN ("Resulting task execution time"
+                  " is 16 September 2020 22:22")
+            {
+                const auto correct_execution_time { ptime_t(
+                        date_t(2020, 9, 16),
+                        hours_t(22) + minutes_t(22)) };
+                const auto result_execution_time { task.time };
+                REQUIRE(correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
