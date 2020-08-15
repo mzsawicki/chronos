@@ -398,3 +398,77 @@ SCENARIO ("Closest time point is correct for month-related point", "[unit]")
         }
     }
 }
+
+SCENARIO ("If task execution day is set to 31,"
+          " correct day number persist through 30-day months",
+          "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("A first day of 31-day month (1 October 2020)")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 10, 1));
+
+        WHEN ("A task is created to be executed every month at day 31"
+              " and transitioned twice")
+        {
+            auto task {
+                task_builder
+                .everyMonthsCount(1)
+                .atMonthDay({ .day = 31, .hour = 0, .minute = 0 })
+                .build() };
+
+            transit(task);
+            transit(task);
+
+            THEN ("Execution day is set to 31 December")
+            {
+                const auto correct_execution_time { ptime_t(
+                        date_t(2020, 12, 31)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
+
+SCENARIO ("If task execution day is set to 31,"
+          " correct day number persist through February",
+          "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("A first day of January (1 January 2021)")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2021, 1, 1));
+
+        WHEN ("A task is created to be executed every month at day 31"
+              "and transitioned twice")
+        {
+            auto task {
+                task_builder
+                .everyMonthsCount(1)
+                .atMonthDay({ .day = 31, .hour = 0, .minute = 0 })
+                .build() };
+
+            transit(task);
+            transit(task);
+
+            THEN ("Execution day is set to 31 March 2021")
+            {
+                const auto correct_execution_time { ptime_t(
+                        date_t(2021, 3, 31)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
