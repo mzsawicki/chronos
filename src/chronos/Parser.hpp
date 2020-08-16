@@ -520,8 +520,8 @@ namespace chronos::parser::error
     class SyntaxError : public std::runtime_error
     {
     public:
-        explicit SyntaxError(std::string bad_entry)
-            : std::runtime_error(std::move(bad_entry)) { }
+        explicit SyntaxError(const std::string &bad_entry)
+            : std::runtime_error(bad_entry) { }
     };
 }
 
