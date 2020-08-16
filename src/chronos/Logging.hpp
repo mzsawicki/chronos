@@ -47,7 +47,7 @@ namespace chronos::logging::formatters
         auto formatter { std::make_unique<spdlog::pattern_formatter>() };
         formatter
             ->add_flag<detail::CustomTimeFormatterFlag<ClockT> >('#')
-            .set_pattern("[%#] (%l): %v");
+            .set_pattern("[%#]: %v");
         return formatter;
     }
 }
