@@ -8,6 +8,7 @@
 #include "chronos/Schedule.hpp"
 #include "chronos/System.hpp"
 #include "chronos/Task.hpp"
+#include "chronos/Timer.hpp"
 
 
 namespace chronos
@@ -18,7 +19,7 @@ namespace chronos
     using schedule_ptr_t = std::shared_ptr<schedule_t>;
     using system_call_t = SystemCallLoggingProxy<SystemCall>;
     using dispatcher_t = Dispatcher<schedule_t, system_call_t>;
-    using coordinator_t = Coordinator<dispatcher_t>;
+    using coordinator_t = Coordinator<dispatcher_t, Timer>;
     using task_buidler_t = TaskBuilder<second_clock_t>;
     using parser_t = Parser<task_buidler_t>;
     using file_reader_t = FileReader<parser_t, schedule_t>;
