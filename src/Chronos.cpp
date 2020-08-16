@@ -1,4 +1,5 @@
 #include <csignal>
+#include <thread>
 #include "fmt/color.h"
 #include "chronos/Coordinator.hpp"
 #include "chronos/Dispatcher.hpp"
@@ -64,6 +65,11 @@ namespace chronos::detail
                 "Syntax error: {}", error.what()));
     }
 
+    void show_termination_message()
+    {
+        print_error_message("Process terminated by user");
+    }
+
     coordinator_t setup_coordinator(schedule_ptr_t schedule)
     {
         dispatcher_t dispatcher(schedule);
@@ -104,6 +110,27 @@ namespace chronos::status
 
 namespace chronos
 {
+    void loop_coordinator_forever(coordinator_t &coordinator)
+    {
+        while (!signals::interrupted)
+            coordinator.loop();
+    }
+
+    std::thread start_coordinator_thread(coordinator_t &coordinator)
+    {
+        std::thread coordinator_thread(
+                std::ref(loop_coordinator_forever),
+                std::ref(coordinator));
+        return coordinator_thread;
+    }
+
+    void wait_until_interrupted()
+    {
+        Timer timer;
+        while (!signals::interrupted)
+            timer.wait(boost::posix_time::seconds(1));
+    }
+
     int run(int argc, char **argv)
     {
         // Setup logger
@@ -135,6 +162,18 @@ namespace chronos
 
         // Create coordinator
         auto coordinator { detail::setup_coordinator(schedule) };
+
+        // Start coordinating thread
+        auto coordinator_thread {
+            start_coordinator_thread(coordinator) };
+
+        // Wait until interrupted
+        wait_until_interrupted();
+
+        // When interrupted, terminate coordinator
+        detail::show_termination_message();
+        coordinator.terminate();
+        coordinator_thread.join();
 
         return status::OK;
     }
