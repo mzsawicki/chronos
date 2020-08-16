@@ -1,3 +1,4 @@
+#include <csignal>
 #include "fmt/color.h"
 #include "chronos/Coordinator.hpp"
 #include "chronos/Dispatcher.hpp"
@@ -21,12 +22,6 @@ namespace chronos
     using task_buidler_t = TaskBuilder<second_clock_t>;
     using parser_t = Parser<task_buidler_t>;
     using file_reader_t = FileReader<parser_t, schedule_t>;
-}
-
-namespace chronos::status
-{
-    constexpr int OK { 0 };
-    constexpr int ERROR { 1 };
 }
 
 namespace chronos::error
@@ -90,6 +85,22 @@ namespace chronos::detail
     }
 }
 
+namespace chronos::signals
+{
+    volatile sig_atomic_t interrupted { 0 };
+
+    void interrupt(int)
+    {
+        interrupted = 1;
+    }
+}
+
+namespace chronos::status
+{
+    constexpr int OK { 0 };
+    constexpr int ERROR { 1 };
+}
+
 namespace chronos
 {
     int run(int argc, char **argv)
@@ -116,6 +127,10 @@ namespace chronos
             detail::show_syntax_error(error);
             return status::ERROR;
         }
+
+        // Setup signal handling
+        void (*interrupt_handler) (int);
+        interrupt_handler = signal(SIGINT, signals::interrupt);
 
         // Create coordinator
         auto coordinator { detail::setup_coordinator(schedule) };
