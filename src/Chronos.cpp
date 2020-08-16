@@ -54,6 +54,13 @@ namespace chronos::detail
         fmt::print(error_message_formatting, message);
     }
 
+    void print_info_message(const std::string &message)
+    {
+        constexpr auto FOREGROUND_COLOR { fmt::color::green };
+        const auto info_message_formatting { fg(FOREGROUND_COLOR) };
+        fmt::print(info_message_formatting, message);
+    }
+
     void show_arg_count_error(const error::WrongNumberOfArguments &error)
     {
         print_error_message(error.what());
@@ -67,7 +74,7 @@ namespace chronos::detail
 
     void show_termination_message()
     {
-        print_error_message("Process terminated by user");
+        print_info_message("Process terminated by user");
     }
 
     coordinator_t setup_coordinator(schedule_ptr_t schedule)
