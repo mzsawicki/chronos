@@ -227,7 +227,7 @@ namespace chronos::time
         const auto current_hour { current_daytime.hours() };
         const auto current_minute { current_daytime.minutes() };
         return time_t(current_date,
-                time_duration_t(current_hour, current_minute, NO_SECONDS));
+                time_duration_t(current_hour, current_minute + 1, NO_SECONDS));
     }
 }
 

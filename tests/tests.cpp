@@ -472,3 +472,38 @@ SCENARIO ("If task execution day is set to 31,"
         }
     }
 }
+
+SCENARIO ("For minute-related execution time point, designate next minute",
+          "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("A time between minutes")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2021, 1, 1),
+                chronos::minutes_duration_t(15)
+                + chronos::seconds_duration_t(20));
+
+        WHEN ("A task is created to be executed every amount of minutes")
+        {
+            auto task {
+                task_builder
+                .everyMinutesCount(1)
+                .atMinute()
+                .build() };
+
+            THEN ("Execution time point is next whole minute")
+            {
+                const auto correct_execution_time {ptime_t(
+                        date_t(2021, 1, 1),
+                        chronos::minutes_duration_t(16)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
