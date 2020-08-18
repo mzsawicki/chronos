@@ -111,7 +111,7 @@ namespace chronos::logging::schedule
     void log_before_retry(const TaskT &task)
     {
         const std::string message { fmt::format(
-                "Task \"{}\": {} to retry",
+                "Task \"{}\" will be retried. Time to retry: {}",
                 task.command,
                 boost::posix_time::to_simple_string(task.retry_after)) };
         log(message);
