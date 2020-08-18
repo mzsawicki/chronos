@@ -3,7 +3,7 @@
 #include <string>
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 #include "chronos/Dispatcher.hpp"
-#include "chronos/FileReader.hpp"
+#include "chronos/Filesystem.hpp"
 #include "chronos/Logging.hpp"
 #include "chronos/Parser.hpp"
 #include "chronos/Schedule.hpp"

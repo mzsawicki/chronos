@@ -3,6 +3,7 @@
 #include <fstream>
 #include <memory>
 #include <string>
+#include <utility>
 #include "fmt/core.h"
 
 
@@ -11,9 +12,9 @@ namespace chronos::filesystem::error
     class FileNotFound : public std::runtime_error
     {
     public:
-        explicit FileNotFound(const std::string& path)
-            : std::runtime_error(
-                    fmt::format("File not found : {}", path)) { }
+        explicit FileNotFound(const std::string &path)
+            : std::runtime_error(fmt::format(
+                    "File not found : {}", path)) { }
     };
 }
 
@@ -33,6 +34,14 @@ namespace chronos::filesystem
         string_stream << file.rdbuf();
         std::string content { string_stream.str() };
         return content;
+    }
+
+    size_t calculate_file_hash(const std::filesystem::path &path)
+    {
+        check_if_file_exist(path);
+        const auto content { read_file_content(path) };
+        std::hash<std::string> hash;
+        return hash(content);
     }
 }
 
@@ -60,5 +69,25 @@ namespace chronos
         }
 
         ParserT parser;
+    };
+
+    class FileGuard
+    {
+    public:
+        explicit FileGuard(const std::filesystem::path &path)
+            : path(path),
+            previous_hash(filesystem::calculate_file_hash(path)) { }
+
+        bool checkForChange()
+        {
+            const auto current_hash { filesystem::calculate_file_hash(path) };
+            const bool changed { current_hash != previous_hash };
+            previous_hash = current_hash;
+            return changed;
+        }
+
+    private:
+        std::filesystem::path path;
+        size_t previous_hash;
     };
 }
