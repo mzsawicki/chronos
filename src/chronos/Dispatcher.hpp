@@ -22,7 +22,8 @@ namespace chronos
         void handleNextTask()
         {
             auto task { schedule->withdrawNextTask() };
-            const bool execution_succeed { execute(task.command) };
+            const auto execution_response { execute(task.command) };
+            const bool execution_succeed { execution_response.success };
             if (!execution_succeed && has_attempts_left(task))
                 schedule->retry(task);
             if (!is_retry(task))

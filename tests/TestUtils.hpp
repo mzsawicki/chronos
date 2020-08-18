@@ -3,6 +3,15 @@
 #include "boost/date_time/posix_time/posix_time_types.hpp"
 
 
+namespace test::system
+{
+    struct Response
+    {
+        bool success;
+        std::string message;
+    };
+}
+
 namespace test
 {
     struct Clock
@@ -28,18 +37,23 @@ namespace test
 
     struct FailingExecution
     {
-        bool operator() (const std::string&)
+        using response_t = system::Response;
+
+        response_t operator() (const std::string&)
         {
-            return false;
+            return { .success = false };
         }
     };
 
     class FakeSystemCall
     {
     public:
-        bool operator() (const std::string&)
+        using response_t = system::Response;
+
+        response_t operator() (const std::string&)
         {
-            return distribution(generator);
+            const bool success(distribution(generator));
+            return { .success = success };
         }
 
     private:

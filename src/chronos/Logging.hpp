@@ -127,15 +127,28 @@ namespace chronos::logging::system
         log(message);
     }
 
-    void log_after_successful_execution(const std::string &command)
+    void append_system_response(std::string &src,
+                                const std::string &system_response)
     {
-        const std::string message { "Execution succeed" };
+        src.append(fmt::format(
+                "\nSystem message: {}", system_response));
+    }
+
+    void log_after_successful_execution(const std::string &command,
+                                        const std::string &response_message)
+    {
+        std::string message { "Execution succeed" };
+        if (!response_message.empty())
+            append_system_response(message, response_message);
         log(message);
     }
 
-    void log_after_failed_execution(const std::string &command)
+    void log_after_failed_execution(const std::string &command,
+                                    const std::string &response_message)
     {
-        const std::string message { "Execution failed" };
+        std::string message { "Execution failed" };
+        if (!response_message.empty())
+            append_system_response(message, response_message);
         log(message);
     }
 }
@@ -190,15 +203,19 @@ namespace chronos
     class SystemCallLoggingProxy
     {
     public:
-        bool operator () (const std::string &command)
+        using response_t = typename WrapeeT::response_t;
+
+        response_t operator () (const std::string &command)
         {
             logging::system::log_before_command_execution(command);
-            const bool result { wrapee(command) };
-            if (result)
-                logging::system::log_after_successful_execution(command);
+            const auto response { wrapee(command) };
+            if (response.success)
+                logging::system::log_after_successful_execution(command,
+                                                            response.message);
             else
-                logging::system::log_after_failed_execution(command);
-            return result;
+                logging::system::log_after_failed_execution(command,
+                                                            response.message);
+            return response;
         }
 
     private:
