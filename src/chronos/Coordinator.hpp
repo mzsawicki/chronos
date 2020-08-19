@@ -14,18 +14,16 @@ namespace chronos
         {
             const auto time_to_next_task { dispatcher.timeToNextTask() };
             timer.wait(time_to_next_task);
-            if (!terminated)
+            if (time_to_next_task <= 0)
                 dispatcher.handleNextTask();
         }
 
         void terminate()
         {
-            terminated = true;
             timer.interrupt();
         }
 
     private:
-        bool terminated { false };
         DispatcherT dispatcher;
         TimerT timer;
     };
