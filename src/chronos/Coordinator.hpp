@@ -14,6 +14,7 @@ namespace chronos
         {
             const auto time_to_next_task { dispatcher.timeToNextTask() };
             timer.wait(time_to_next_task);
+            time_to_next_task = dispatcher.timeToNextTask();
             if (time_to_next_task <= 0)
                 dispatcher.handleNextTask();
         }
