@@ -153,6 +153,24 @@ namespace chronos::logging::system
     }
 }
 
+namespace chronos::logging::parser
+{
+    void log_parsing_error()
+    {
+        std::string message { "Parsing source file failed" };
+        log(message);
+    }
+}
+
+namespace chronos::logging::dispatcher
+{
+    void log_reload()
+    {
+        std::string message { "Schedule has been reloaded" };
+        log(message);
+    }
+}
+
 namespace chronos
 {
     template <typename WrapeeT>
@@ -216,6 +234,53 @@ namespace chronos
                 logging::system::log_after_failed_execution(command,
                                                             response.message);
             return response;
+        }
+
+    private:
+        WrapeeT wrapee;
+    };
+
+    template <typename WrapeeT>
+    class ParserLoggingProxy
+    {
+    public:
+        typename WrapeeT::result_t parse(const std::string &input)
+        {
+            try {
+                return wrapee.parse(input);
+            } catch (const std::exception &error) {
+                logging::parser::log_parsing_error();
+                throw error;
+            }
+        }
+    private:
+        WrapeeT wrapee;
+    };
+
+    template <typename WrapeeT>
+    class DispatcherLoggingProxy
+    {
+    public:
+        using schedule_ptr_t = typename WrapeeT::schedule_ptr_t;
+        using time_duration_t = typename WrapeeT::time_duration_t;
+
+        explicit DispatcherLoggingProxy(schedule_ptr_t schedule)
+            : wrapee(schedule) { }
+
+        time_duration_t timeToNextTask() const
+        {
+            return wrapee.timeToNextTask();
+        }
+
+        void handleNextTask()
+        {
+            wrapee.handleNextTask();
+        }
+
+        void reload(schedule_ptr_t new_schedule)
+        {
+            wrapee.reload(new_schedule);
+            logging::dispatcher::log_reload();
         }
 
     private:

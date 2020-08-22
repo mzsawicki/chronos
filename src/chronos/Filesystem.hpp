@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include <filesystem>
 #include <fstream>
 #include <memory>
@@ -18,7 +19,7 @@ namespace chronos::filesystem::error
     };
 }
 
-namespace chronos::filesystem
+namespace chronos::filesystem::detail
 {
     void check_if_file_exist(const std::filesystem::path &path)
     {
@@ -45,7 +46,30 @@ namespace chronos::filesystem
     }
 }
 
-namespace chronos
+namespace chronos::filesystem::guard
+{
+    class FileGuard
+    {
+    public:
+        explicit FileGuard(const std::filesystem::path &path)
+            : path(path),
+            previous_hash(detail::calculate_file_hash(path)) { }
+
+        bool checkForChange()
+        {
+            const auto current_hash { detail::calculate_file_hash(path) };
+            const bool changed { current_hash != previous_hash };
+            previous_hash = current_hash;
+            return changed;
+        }
+
+    private:
+        std::filesystem::path path;
+        size_t previous_hash;
+    };
+}
+
+namespace chronos::filesystem::reader
 {
     template <typename ParserT, typename ScheduleT>
     class FileReader
@@ -53,8 +77,8 @@ namespace chronos
     public:
         std::shared_ptr<ScheduleT> read(const std::filesystem::path &path)
         {
-            filesystem::check_if_file_exist(path);
-            const auto content { filesystem::read_file_content(path) };
+            filesystem::detail::check_if_file_exist(path);
+            const auto content { filesystem::detail::read_file_content(path) };
             const auto schedule { parseContent(content) };
             return schedule;
         }
@@ -70,24 +94,40 @@ namespace chronos
 
         ParserT parser;
     };
+}
 
-    class FileGuard
+namespace chronos
+{
+    template <typename TimerT>
+    class FileLock
     {
     public:
-        explicit FileGuard(const std::filesystem::path &path)
-            : path(path),
-            previous_hash(filesystem::calculate_file_hash(path)) { }
+        explicit FileLock(const std::filesystem::path &path) : guard(path) { }
 
-        bool checkForChange()
+        void waitUntilChange(const typename TimerT::duration_t &check_interval)
         {
-            const auto current_hash { filesystem::calculate_file_hash(path) };
-            const bool changed { current_hash != previous_hash };
-            previous_hash = current_hash;
-            return changed;
+            released = false;
+            while (!guard.checkForChange() && !released)
+                timer.wait(check_interval);
+        }
+
+        void release()
+        {
+            released = true;
+            timer.interrupt();
         }
 
     private:
-        std::filesystem::path path;
-        size_t previous_hash;
+        TimerT timer;
+        filesystem::guard::FileGuard guard;
+        std::atomic<bool> released { false };
     };
+
+    template <typename ParserT, typename ScheduleT>
+    std::shared_ptr<ScheduleT>
+    read_schedule_file(const std::filesystem::path &path)
+    {
+        filesystem::reader::FileReader<ParserT, ScheduleT> reader;
+        return reader.read(path);
+    }
 }

@@ -1,5 +1,5 @@
 #include <csignal>
-#include <thread>
+#include <cstdlib>
 #include "fmt/color.h"
 #include "chronos/Coordinator.hpp"
 #include "chronos/Dispatcher.hpp"
@@ -11,20 +11,6 @@
 #include "chronos/Task.hpp"
 #include "chronos/Timer.hpp"
 
-
-namespace chronos
-{
-    using path_t = std::filesystem::path;
-    using second_clock_t = boost::posix_time::second_clock;
-    using schedule_t = ScheduleLoggingProxy<Schedule<Task, second_clock_t> >;
-    using schedule_ptr_t = std::shared_ptr<schedule_t>;
-    using system_call_t = SystemCallLoggingProxy<SystemCall>;
-    using dispatcher_t = Dispatcher<schedule_t, system_call_t>;
-    using coordinator_t = Coordinator<dispatcher_t, Timer>;
-    using task_buidler_t = TaskBuilder<second_clock_t>;
-    using parser_t = Parser<task_buidler_t>;
-    using file_reader_t = FileReader<parser_t, schedule_t>;
-}
 
 namespace chronos::error
 {
@@ -39,11 +25,26 @@ namespace chronos::error
 
 namespace chronos::detail
 {
-    schedule_ptr_t parse_schedule(const path_t &file_path)
+    void validate_arguments_count(int argc)
     {
-        file_reader_t fileReader;
-        return fileReader.read(file_path);
+        constexpr auto CORRECT_ARGC { 2 };
+        if (argc != CORRECT_ARGC)
+            throw error::WrongNumberOfArguments(--argc);
     }
+}
+
+namespace chronos
+{
+    using clock_t_ = boost::posix_time::second_clock;
+    using schedule_t = ScheduleLoggingProxy<Schedule<Task, clock_t_> >;
+    using system_call_t = SystemCallLoggingProxy<SystemCall>;
+    using dispatcher_t = DispatcherLoggingProxy<
+            Dispatcher<schedule_t, system_call_t> >;
+    using task_buidler_t = TaskBuilder<clock_t_>;
+    using parser_t = Parser<task_buidler_t>;
+    using logging_parser_t = ParserLoggingProxy<parser_t>;
+    using coordinator_t = CoordinatorThread<dispatcher_t, Timer>;
+    using file_lock_t = FileLock<Timer>;
 
     void print_error_message(const std::string &message)
     {
@@ -53,49 +54,134 @@ namespace chronos::detail
                 fg(FOREGROUND_COLOR) | TEXT_EMPHASIS };
         fmt::print(error_message_formatting, message);
     }
+}
 
-    void print_info_message(const std::string &message)
+namespace chronos::program
+{
+    std::shared_ptr<dispatcher_t>
+    setup_dispatcher(const std::filesystem::path &file)
     {
-        constexpr auto FOREGROUND_COLOR { fmt::color::green };
-        const auto info_message_formatting { fg(FOREGROUND_COLOR) };
-        fmt::print(info_message_formatting, message);
+        auto schedule { read_schedule_file<parser_t, schedule_t>(file) };
+        return std::make_shared<dispatcher_t>(schedule);
     }
 
-    void show_arg_count_error(const error::WrongNumberOfArguments &error)
+    std::unique_ptr<file_lock_t>
+    setup_file_lock(const std::filesystem::path &file)
     {
-        print_error_message(error.what());
+        return std::make_unique<file_lock_t>(file);
     }
 
-    void show_syntax_error(const parser::error::SyntaxError &error)
+    class Program
     {
-        print_error_message(fmt::format(
-                "Syntax error: {}", error.what()));
+    private:
+        struct Context
+        {
+            explicit Context(const std::filesystem::path &path)
+                : dispatcher(setup_dispatcher(path)),
+                lock(setup_file_lock(path)) { }
+
+            std::shared_ptr<dispatcher_t> dispatcher;
+            std::unique_ptr<file_lock_t> lock;
+        };
+
+    public:
+        explicit Program(const std::filesystem::path &path)
+            : source_file(path),
+            context(path) { }
+
+        void run()
+        {
+            while (!stopped)
+                loop();
+        }
+
+        void stop()
+        {
+            stopped = true;
+            context.lock->release();
+        }
+
+    private:
+        void loop()
+        {
+            coordinate();
+            if (!stopped)
+                reload();
+        }
+
+        void coordinate() const
+        {
+            using seconds_t = boost::posix_time::seconds;
+            constexpr int FILE_CHECK_INTERVAL { 60 };
+            coordinator_t coordinator(context.dispatcher);
+            context.lock->waitUntilChange(seconds_t(FILE_CHECK_INTERVAL));
+            coordinator.terminate();
+        }
+
+        void reload()
+        {
+            try {
+                auto new_schedule {
+                    read_schedule_file<logging_parser_t , schedule_t>(
+                            source_file) };
+                context.dispatcher->reload(new_schedule);
+            } catch (...) { }
+        }
+
+        std::atomic<bool> stopped { false };
+        std::filesystem::path source_file;
+        Context context;
+    };
+
+    std::unique_ptr<Program> setup_program(const std::filesystem::path &path)
+    {
+        return std::make_unique<Program>(path);
     }
 
-    void show_termination_message()
+    std::unique_ptr<std::thread> run_thread(std::unique_ptr<Program> &program)
     {
-        print_info_message("Process terminated by user");
+        const auto run_program { [&program] () { program->run(); } };
+        return std::make_unique<std::thread>(run_program);
     }
+}
 
-    coordinator_t setup_coordinator(schedule_ptr_t schedule)
+namespace chronos
+{
+    class MainThread
     {
-        dispatcher_t dispatcher(schedule);
-        return coordinator_t(dispatcher);
-    }
+    public:
+        explicit MainThread(const std::filesystem::path &path)
+                : program(program::setup_program(path)),
+                  thread(run_thread(program)) { }
 
-    void validate_arguments_count(int argc)
-    {
-        constexpr auto CORRECT_ARGC { 2 };
-        if (argc != CORRECT_ARGC)
-            throw error::WrongNumberOfArguments(--argc);
-    }
+        void terminate()
+        {
+            program->stop();
+            thread->join();
+        }
+
+    private:
+        std::unique_ptr<program::Program> program;
+        std::unique_ptr<std::thread> thread;
+    };
 
     std::filesystem::path read_file_path_from_arg(int argc, char **argv)
     {
-        validate_arguments_count(argc);
+        detail::validate_arguments_count(argc);
         constexpr auto SOURCE_FILE_ARG { 1 };
         const auto source_path { argv[SOURCE_FILE_ARG] };
         return std::filesystem::path(source_path);
+    }
+
+    std::unique_ptr<MainThread> run(const std::filesystem::path &path)
+    {
+        return std::make_unique<MainThread>(path);
+    }
+
+    void wait_for_interrupt()
+    {
+        using seconds_t = boost::posix_time::seconds;
+        Timer().wait(seconds_t(1));
     }
 }
 
@@ -109,84 +195,25 @@ namespace chronos::signals
     }
 }
 
-namespace chronos::status
-{
-    constexpr int OK { 0 };
-    constexpr int ERROR { 1 };
-}
-
-namespace chronos
-{
-    void loop_coordinator_forever(coordinator_t &coordinator)
-    {
-        while (!signals::interrupted)
-            coordinator.loop();
-    }
-
-    std::thread start_coordinator_thread(coordinator_t &coordinator)
-    {
-        std::thread coordinator_thread(
-                std::ref(loop_coordinator_forever),
-                std::ref(coordinator));
-        return coordinator_thread;
-    }
-
-    void wait_until_interrupted()
-    {
-        Timer timer;
-        while (!signals::interrupted)
-            timer.wait(boost::posix_time::seconds(1));
-    }
-
-    int run(int argc, char **argv)
-    {
-        // Setup logger
-        setup_file_logger();
-
-        // Get tasks file path
-        path_t tasks_file_path;
-        try {
-            tasks_file_path = detail::read_file_path_from_arg(argc, argv);
-        }
-        catch (const error::WrongNumberOfArguments &error) {
-            detail::show_arg_count_error(error);
-            return status::ERROR;
-        }
-
-        // Load schedule from file
-        schedule_ptr_t schedule;
-        try {
-            schedule = detail::parse_schedule(tasks_file_path);
-        }
-        catch (const parser::error::SyntaxError &error) {
-            detail::show_syntax_error(error);
-            return status::ERROR;
-        }
-
-        // Setup signal handling
-        void (*interrupt_handler) (int);
-        interrupt_handler = signal(SIGINT, signals::interrupt);
-
-        // Create coordinator
-        auto coordinator { detail::setup_coordinator(schedule) };
-
-        // Start coordinating thread
-        auto coordinator_thread {
-            start_coordinator_thread(coordinator) };
-
-        // Wait until interrupted
-        wait_until_interrupted();
-
-        // When interrupted, terminate coordinator
-        detail::show_termination_message();
-        coordinator.terminate();
-        coordinator_thread.join();
-
-        return status::OK;
-    }
-}
-
 int main(int argc, char **argv)
 {
-    return chronos::run(argc, argv);
+    void (*interrupt_handler) (int);
+    interrupt_handler = signal(SIGINT, chronos::signals::interrupt);
+
+    chronos::setup_file_logger();
+
+    std::unique_ptr<chronos::MainThread> main_thread;
+    try {
+        auto path { chronos::read_file_path_from_arg(argc, argv) };
+        main_thread = chronos::run(path);
+    } catch (const std::exception &error) {
+        chronos::print_error_message(error.what());
+        return EXIT_FAILURE;
+    }
+
+    while (!chronos::signals::interrupted)
+        chronos::wait_for_interrupt();
+    main_thread->terminate();
+
+    return EXIT_SUCCESS;
 }
