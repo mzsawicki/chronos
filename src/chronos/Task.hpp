@@ -99,6 +99,14 @@ namespace chronos::time
         return month_t(month.as_number() % 12 + 1);
     }
 
+    int map_week_day(int week_day_number)
+    {
+        constexpr int SUNDAY_NUMBER { 7 };
+        if (!week_day_number)
+            return SUNDAY_NUMBER;
+        return week_day_number;
+    }
+
     MonthTime extract_month_time(const time_t &time_point)
     {
         const auto date { time_point.date() };
@@ -115,7 +123,7 @@ namespace chronos::time
         const auto date { time_point.date() };
         const auto time_of_day { time_point.time_of_day() };
         WeekTime week_time;
-        week_time.day = date.day_of_week();
+        week_time.day = map_week_day(date.day_of_week());
         week_time.hour = time_of_day.hours();
         week_time.minute = time_of_day.minutes();
         return week_time;
