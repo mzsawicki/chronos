@@ -316,7 +316,7 @@ namespace chronos::parser
                     >> attr(0)
                     >> minute;
 
-            at_placeholder %= attr(0) >> attr(0) >> attr(0);
+            at_placeholder %= attr(1) >> attr(0) >> attr(0);
 
             retry_times %= uint_ >> time_s;
 
