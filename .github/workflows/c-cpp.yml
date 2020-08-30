@@ -20,6 +20,6 @@ jobs:
     - name: mkdir
       run: mkdir build && cd build
     - name: cmake
-      run: cmake --build .. -- j 3
+      run: cmake -DCMAKE_BUILD_TYPE=Release ..
     - name: make
       run: make
