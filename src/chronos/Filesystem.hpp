@@ -30,7 +30,7 @@ namespace chronos::filesystem::detail
 {
     void check_if_file_exist(const std_filesystem::path &path)
     {
-        if (!std::filesystem::exists(path))
+        if (!std_filesystem::exists(path))
             throw error::FileNotFound(path);
     }
 
