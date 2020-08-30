@@ -38,9 +38,9 @@ include_directories(${CONAN_INCLUDE_DIRS})
 
 # Executables
 if (CMAKE_BUILD_TYPE MATCHES Debug)
-    add_executable(tests tests/tests.cpp)
     add_executable(simulation tests/simulation.cpp)
 endif()
 
 add_executable(chronos src/Chronos.cpp)
+add_executable(tests tests/tests.cpp)
 target_link_libraries(chronos PRIVATE Threads::Threads stdc++fs)
