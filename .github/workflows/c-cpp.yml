@@ -20,6 +20,6 @@ jobs:
     - name: mkdir
       run: mkdir build && cd build
     - name: cmake
-      run: cmake --build .. --target chronos -- j 3
+      run: cmake --build .. -- j 3
     - name: make
       run: make
