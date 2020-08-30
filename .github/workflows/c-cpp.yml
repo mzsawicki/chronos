@@ -16,8 +16,6 @@ jobs:
     - name: Install conan
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
-        command: install conan
-    - name: cmake
-      run: pipenv run cmake -DCMAKE_BUILD_TYPE=Release .
+        command: install conan && cmake -DCMAKE_BUILD_TYPE=Release .
     - name: make
       run: make
