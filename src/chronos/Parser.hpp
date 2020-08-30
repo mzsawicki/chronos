@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -547,8 +548,11 @@ namespace chronos
         {
             const auto parsing_output { parseToStruct(input) };
             result_t result;
-            for (const auto &output : parsing_output)
-                result.push_back(converter.convert(output));
+            parser::Converter<TaskBuilderT> converter;
+            std::transform(begin(parsing_output), end(parsing_output),
+                           std::back_inserter(result),
+                           [&converter] (const auto &elem) {
+                                return converter.convert(elem); });
             return result;
         }
 
@@ -569,6 +573,5 @@ namespace chronos
         }
 
         parser::parser parser;
-        parser::Converter<TaskBuilderT> converter;
     };
 }

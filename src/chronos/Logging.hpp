@@ -250,7 +250,7 @@ namespace chronos
                 return wrapee.parse(input);
             } catch (const std::exception &error) {
                 logging::parser::log_parsing_error();
-                throw error;
+                throw;
             }
         }
     private:
