@@ -18,6 +18,6 @@ jobs:
       with:
         command: install conan
     - name: cmake
-      run: cmake -DCMAKE_BUILD_TYPE=Release .
+      run: pipenv run cmake -DCMAKE_BUILD_TYPE=Release .
     - name: make
       run: make
