@@ -17,5 +17,7 @@ jobs:
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
         command: install conan
+    - name: cmake
+      run: cmake .
     - name: make
       run: make
