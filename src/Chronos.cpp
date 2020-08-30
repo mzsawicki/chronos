@@ -66,7 +66,7 @@ namespace chronos::program
     }
 
     std::unique_ptr<file_lock_t>
-    setup_file_lock(const std::filesystem::path &file)
+    setup_file_lock(const std_filesystem::path &file)
     {
         return std::make_unique<file_lock_t>(file);
     }
@@ -170,7 +170,7 @@ namespace chronos
         detail::validate_arguments_count(argc);
         constexpr auto SOURCE_FILE_ARG { 1 };
         const auto source_path { argv[SOURCE_FILE_ARG] };
-        return std::filesystem::path(source_path);
+        return std_filesystem::path(source_path);
     }
 
     std::unique_ptr<MainThread> run(const std_filesystem::path &path)
