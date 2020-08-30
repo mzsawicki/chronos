@@ -83,16 +83,39 @@ namespace chronos::logging
     }
 }
 
+namespace chronos::logging::schedule::detail
+{
+    template <typename TaskT>
+    std::string added_task_normal_message(const TaskT &task)
+    {
+        using namespace boost::posix_time;
+        const auto task_time_string { to_simple_string(task.time) };
+        return fmt::format(
+                "Added new task to schedule: \"{}\" to be executed at: {}",
+                task.command, task_time_string);
+    }
+
+    template <typename TaskT>
+    std::string added_task_retry_message(const TaskT &task)
+    {
+        using namespace boost::posix_time;
+        const auto task_time_string { to_simple_string(task.time) };
+        return fmt::format(
+                "Added task retry ({}/{}) to schedule: \"{}\""
+                " to be executed at: {}",
+                task.attempts_count, task.max_retries_count,
+                task.command, task_time_string);
+    }
+}
+
 namespace chronos::logging::schedule
 {
     template <typename TaskT>
     void log_added_task(const TaskT &task)
     {
-        using namespace boost::posix_time;
-        const auto task_time_string { to_simple_string(task.time) };
-        const std::string message { fmt::format(
-                    "Added new task to schedule: \"{}\" to be executed at: {}",
-                    task.command, task_time_string) };
+        const std::string message { !task.attempts_count ?
+            detail::added_task_normal_message(task)
+            : detail::added_task_retry_message(task) };
         log(message);
     }
 
@@ -110,9 +133,12 @@ namespace chronos::logging::schedule
     template <typename TaskT>
     void log_before_retry(const TaskT &task)
     {
+        const auto retries_left {
+            task.max_retries_count - task.attempts_count };
         const std::string message { fmt::format(
-                "Task \"{}\" will be retried. Time to retry: {}",
-                task.command,
+                "Task \"{}\" will be retried (retries left: {})."
+                " Time to retry: {}",
+                task.command, retries_left,
                 boost::posix_time::to_simple_string(task.retry_after)) };
         log(message);
     }
