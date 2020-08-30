@@ -1,11 +1,16 @@
 #pragma once
 #include <atomic>
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string>
 #include <utility>
 #include "fmt/core.h"
+
+#if __GNUC__ > 7
+#include <filesystem>
+#else
+#include <experimental/filesystem>
+#endif
 
 
 namespace chronos::filesystem::error
