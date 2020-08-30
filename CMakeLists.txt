@@ -8,13 +8,25 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(CMAKE_CXX_FLAGS "-fprofile-arcs -ftest-coverage")
 endif()
 
-# Conan setup
-if(EXISTS ${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-    conan_basic_setup()
-else()
-    message(WARNING "The file conanbuildinfo.cmake doesn't exist")
+if(NOT EXISTS "${CMAKE_BINARY_DIR}/conan.cmake")
+    message(STATUS "Downloading conan.cmake from https://github.com/conan-io/cmake-conan")
+    file(DOWNLOAD "https://raw.githubusercontent.com/conan-io/cmake-conan/master/conan.cmake"
+            "${CMAKE_BINARY_DIR}/conan.cmake")
 endif()
+
+include(${CMAKE_BINARY_DIR}/conan.cmake)
+
+conan_cmake_run(
+        REQUIRES
+            boost/1.73.0
+            catch2/2.13.0
+            fmt/7.0.2
+            spdlog/[>=1.4.1]
+        OPTIONS
+            boost:header_only=True
+            fmt:header_only=True
+            spdlog:header_only=True
+        BASIC_SETUP)
 
 find_package(Boost 1.73 REQUIRED)
 
