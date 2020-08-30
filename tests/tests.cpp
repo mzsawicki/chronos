@@ -498,9 +498,118 @@ SCENARIO ("For minute-related execution time point, designate next minute",
 
             THEN ("Execution time point is next whole minute")
             {
-                const auto correct_execution_time {ptime_t(
+                const auto correct_execution_time { ptime_t(
                         date_t(2021, 1, 1),
                         chronos::minutes_duration_t(16)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
+
+SCENARIO ("For weekday-related execution time point,"
+          " designate next day if day time is too late", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("Current time point after noon")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 8, 23),
+                chronos::hours_duration_t(15)
+                + chronos::minutes_duration_t(0));
+
+        WHEN ("Task is created to be executed"
+              " every week at the same week day before noon")
+        {
+            auto task {
+                task_builder
+                .everyWeeksCount(1)
+                .atWeekDay({ .day = 7, .hour = 9, .minute = 0 })
+                .build() };
+
+            THEN ("Execution time is at the same week day next week")
+            {
+                const auto correct_execution_time {
+                    ptime_t(date_t(2020, 8, 30),
+                    chronos::hours_duration_t(9)
+                    + chronos::minutes_duration_t(0)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            };
+        }
+    }
+}
+
+SCENARIO ("For daytime-related execution time point designate next hour"
+          " if current hour time is too late", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("Current time point at some hour minute 45")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 1, 1),
+                chronos::hours_duration_t(12)
+                + chronos::minutes_duration_t(45));
+
+        WHEN ("A task is created to be executed every hour at minute 30")
+        {
+            auto task {
+                task_builder
+                .createTask()
+                .everyHoursCount(1)
+                .atMinute(30)
+                .build() };
+
+            THEN ("Execution time is at next hour, minute 30")
+            {
+                const auto correct_execution_time {
+                    ptime_t(date_t(2020, 1, 1),
+                    chronos::hours_duration_t(13)
+                    + chronos::minutes_duration_t(30)) };
+                const auto result_execution_time { task.time };
+                REQUIRE (correct_execution_time == result_execution_time);
+            }
+        }
+    }
+}
+
+SCENARIO ("For day-related execution time point designate next day"
+          " if current day time is too late", "[unit]")
+{
+    using task_builder_t = chronos::TaskBuilder<test::artificial_clock_t>;
+    using ptime_t = boost::posix_time::ptime;
+    using date_t = boost::gregorian::date;
+    task_builder_t task_builder;
+
+    GIVEN ("Current time point at some day, hour after noon")
+    {
+        test::artificial_clock_t::time = ptime_t(
+                date_t(2020, 1, 1),
+                chronos::hours_duration_t(18));
+
+        WHEN ("A task is created to be executed every day at noon")
+        {
+            auto task {
+                task_builder
+                .createTask()
+                .everyDaysCount(1)
+                .atHour({ .hour = 12, .minute = 0 })
+                .build() };
+
+            THEN ("Execution time is at next day")
+            {
+                const auto correct_execution_time {
+                    ptime_t(date_t(2020, 1, 2),
+                    chronos::hours_duration_t(12)) };
                 const auto result_execution_time { task.time };
                 REQUIRE (correct_execution_time == result_execution_time);
             }

@@ -195,8 +195,11 @@ namespace chronos::time
         const auto result_daytime {
             time_duration_t(week_time.hour, week_time.minute, NO_SECONDS) };
         const auto result_date {
-            current_date + days_duration_t(days_remaining)};
-        return time_t(result_date, result_daytime);
+            current_date + days_duration_t(days_remaining) };
+        auto result_time { time_t(result_date, result_daytime) };
+        if (result_time < current_time)
+            result_time = result_time + days_duration_t(DAYS_IN_WEEK);
+        return result_time;
     }
 
     template <typename ClockT>
