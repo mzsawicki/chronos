@@ -23,12 +23,12 @@ namespace simulation
     using dispatcher_t = chronos::Dispatcher<schedule_t, execution_t>;
 }
 
-std::filesystem::path get_file_path_from_user()
+std_filesystem::path get_file_path_from_user()
 {
     std::cout << "File path:\n> ";
     std::string input_path;
     std::cin >> input_path;
-    std::filesystem::path path(input_path);
+    std_filesystem::path path(input_path);
     return path;
 }
 

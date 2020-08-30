@@ -59,7 +59,7 @@ namespace chronos
 namespace chronos::program
 {
     std::shared_ptr<dispatcher_t>
-    setup_dispatcher(const std::filesystem::path &file)
+    setup_dispatcher(const std_filesystem::path &file)
     {
         auto schedule { read_schedule_file<parser_t, schedule_t>(file) };
         return std::make_shared<dispatcher_t>(schedule);
@@ -76,7 +76,7 @@ namespace chronos::program
     private:
         struct Context
         {
-            explicit Context(const std::filesystem::path &path)
+            explicit Context(const std_filesystem::path &path)
                 : dispatcher(setup_dispatcher(path)),
                 lock(setup_file_lock(path)) { }
 
@@ -85,7 +85,7 @@ namespace chronos::program
         };
 
     public:
-        explicit Program(const std::filesystem::path &path)
+        explicit Program(const std_filesystem::path &path)
             : source_file(path),
             context(path) { }
 
@@ -129,11 +129,11 @@ namespace chronos::program
         }
 
         std::atomic<bool> stopped { false };
-        std::filesystem::path source_file;
+        std_filesystem::path source_file;
         Context context;
     };
 
-    std::unique_ptr<Program> setup_program(const std::filesystem::path &path)
+    std::unique_ptr<Program> setup_program(const std_filesystem::path &path)
     {
         return std::make_unique<Program>(path);
     }
@@ -150,7 +150,7 @@ namespace chronos
     class MainThread
     {
     public:
-        explicit MainThread(const std::filesystem::path &path)
+        explicit MainThread(const std_filesystem::path &path)
                 : program(program::setup_program(path)),
                   thread(run_thread(program)) { }
 
@@ -165,7 +165,7 @@ namespace chronos
         std::unique_ptr<std::thread> thread;
     };
 
-    std::filesystem::path read_file_path_from_arg(int argc, char **argv)
+    std_filesystem::path read_file_path_from_arg(int argc, char **argv)
     {
         detail::validate_arguments_count(argc);
         constexpr auto SOURCE_FILE_ARG { 1 };
@@ -173,7 +173,7 @@ namespace chronos
         return std::filesystem::path(source_path);
     }
 
-    std::unique_ptr<MainThread> run(const std::filesystem::path &path)
+    std::unique_ptr<MainThread> run(const std_filesystem::path &path)
     {
         return std::make_unique<MainThread>(path);
     }

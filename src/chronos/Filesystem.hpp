@@ -8,8 +8,10 @@
 
 #if __GNUC__ > 7
 #include <filesystem>
+namespace std_filesystem = std::filesystem;
 #else
 #include <experimental/filesystem>
+namespace std_filesystem = std::experimental::filesystem;
 #endif
 
 
@@ -26,13 +28,13 @@ namespace chronos::filesystem::error
 
 namespace chronos::filesystem::detail
 {
-    void check_if_file_exist(const std::filesystem::path &path)
+    void check_if_file_exist(const std_filesystem::path &path)
     {
         if (!std::filesystem::exists(path))
             throw error::FileNotFound(path);
     }
 
-    std::string read_file_content(const std::filesystem::path &path)
+    std::string read_file_content(const std_filesystem::path &path)
     {
         std::ifstream file;
         file.open(path);
@@ -42,7 +44,7 @@ namespace chronos::filesystem::detail
         return content;
     }
 
-    size_t calculate_file_hash(const std::filesystem::path &path)
+    size_t calculate_file_hash(const std_filesystem::path &path)
     {
         check_if_file_exist(path);
         const auto content { read_file_content(path) };
@@ -56,7 +58,7 @@ namespace chronos::filesystem::guard
     class FileGuard
     {
     public:
-        explicit FileGuard(const std::filesystem::path &path)
+        explicit FileGuard(const std_filesystem::path &path)
             : path(path),
             previous_hash(detail::calculate_file_hash(path)) { }
 
@@ -69,7 +71,7 @@ namespace chronos::filesystem::guard
         }
 
     private:
-        std::filesystem::path path;
+        std_filesystem::path path;
         size_t previous_hash;
     };
 }
@@ -80,7 +82,7 @@ namespace chronos::filesystem::reader
     class FileReader
     {
     public:
-        std::shared_ptr<ScheduleT> read(const std::filesystem::path &path)
+        std::shared_ptr<ScheduleT> read(const std_filesystem::path &path)
         {
             filesystem::detail::check_if_file_exist(path);
             const auto content { filesystem::detail::read_file_content(path) };
@@ -107,7 +109,7 @@ namespace chronos
     class FileLock
     {
     public:
-        explicit FileLock(const std::filesystem::path &path) : guard(path) { }
+        explicit FileLock(const std_filesystem::path &path) : guard(path) { }
 
         void waitUntilChange(const typename TimerT::duration_t &check_interval)
         {
@@ -130,7 +132,7 @@ namespace chronos
 
     template <typename ParserT, typename ScheduleT>
     std::shared_ptr<ScheduleT>
-    read_schedule_file(const std::filesystem::path &path)
+    read_schedule_file(const std_filesystem::path &path)
     {
         filesystem::reader::FileReader<ParserT, ScheduleT> reader;
         return reader.read(path);
