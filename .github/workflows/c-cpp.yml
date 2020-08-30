@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install conan
+    - name: Install conan & run CMake
       uses: VaultVulp/action-pipenv@v2.0.1
       with:
         command: install conan && cmake -DCMAKE_BUILD_TYPE=Release .
