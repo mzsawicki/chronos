@@ -43,4 +43,4 @@ if (CMAKE_BUILD_TYPE MATCHES Debug)
 endif()
 
 add_executable(chronos src/Chronos.cpp)
-target_link_libraries(chronos PRIVATE Threads::Threads)
+target_link_libraries(chronos PRIVATE Threads::Threads stdc++fs)
